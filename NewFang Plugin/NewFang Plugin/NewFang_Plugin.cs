@@ -39,6 +39,8 @@ namespace NewFang_Plugin
         public int timeToRestart = 5;
         public bool pluginIsUpToDate = true;
 
+        public bool isRestarting = false;
+
         public Timer timer;
 
         public override void Init(ITorchBase torch)
@@ -95,7 +97,7 @@ namespace NewFang_Plugin
 
         public static bool downloadLatestVersionPlugin(string path, string fileName)
         {
-            string url = "https://raw.githubusercontent.com/AALUND13/NewFang-Plugin/master/Build/NewFang%20Plugin.zip";
+            string url = "https://raw.githubusercontent.com/NewFang/NewFang-Plugin/master/Build/NewFang%20Plugin.zip";
             string savePath = Path.Combine(path, fileName);
 
             try
@@ -114,11 +116,12 @@ namespace NewFang_Plugin
             }
         }
 
-        private void StartRestartTimer()
+        public void StartRestartTimer()
         {
             restartTimer = new Timer(60000); // 60 second interval
             restartTimer.Elapsed += RestartTimerElapsed;
             restartTimer.Start();
+            isRestarting = true;
         }
 
         private void RestartTimerElapsed(object sender, ElapsedEventArgs e)
@@ -142,7 +145,7 @@ namespace NewFang_Plugin
                 string trimmedPath = originalPath.TrimEnd("Instance".ToCharArray());
                 string path = Path.Combine(trimmedPath, "Plugins");
 
-                string manifestUrl = "https://raw.githubusercontent.com/AALUND13/NewFang-Plugin/master/NewFang%20Plugin/manifest.xml";
+                string manifestUrl = "https://raw.githubusercontent.com/NewFang/NewFang-Plugin/master/NewFang%20Plugin/manifest.xml";
                 string versionFromGithub = GetVersionFromManifest(manifestUrl);
 
                 if (versionFromGithub != string.Empty)
@@ -153,20 +156,20 @@ namespace NewFang_Plugin
                         Log.Info($"Plugin is not up to date | version from Github: {versionFromGithub}, plugin Version: {Version}");
                         Log.Info("Updateing plugin");
 
-                        Torch.CurrentSession?.Managers?.GetManager<IChatManagerServer>()?.SendMessageAsSelf("'AALUND13 Plugin' Is Out Of Date! Updating plugin...");
-                        if (downloadLatestVersionPlugin(path, "AALUND13_Plugin.zip"))
+                        Torch.CurrentSession?.Managers?.GetManager<IChatManagerServer>()?.SendMessageAsSelf("'NewFang Plugin' Is Out Of Date! Updating plugin...");
+                        if (downloadLatestVersionPlugin(path, "NewFang_Plugin.zip"))
                         {
-                            Log.Info("Successfully downloaded latest version of 'AALUND13 Plugin'");
+                            Log.Info("Successfully downloaded latest version of 'NewFang Plugin'");
                             Log.Info("Restarting in 5 minutes");
-                            Torch.CurrentSession?.Managers?.GetManager<IChatManagerServer>()?.SendMessageAsSelf("Successfully downloaded latest version of 'AALUND13 Plugin'");
+                            Torch.CurrentSession?.Managers?.GetManager<IChatManagerServer>()?.SendMessageAsSelf("Successfully downloaded latest version of 'NewFang Plugin'");
                             Torch.CurrentSession?.Managers?.GetManager<IChatManagerServer>()?.SendMessageAsSelf("Restarting in 5 minutes");
                             StartRestartTimer();
                             pluginIsUpToDate = false;
                         }
                         else
                         {
-                            Log.Info("Falled to download latest version of 'AALUND13 Plugin'");
-                            Torch.CurrentSession?.Managers?.GetManager<IChatManagerServer>()?.SendMessageAsSelf("Falled to download latest version of 'AALUND13 Plugin'");
+                            Log.Info("Falled to download latest version of 'NewFang Plugin'");
+                            Torch.CurrentSession?.Managers?.GetManager<IChatManagerServer>()?.SendMessageAsSelf("Falled to download latest version of 'NewFang Plugin'");
                         }
                     }
                     else
