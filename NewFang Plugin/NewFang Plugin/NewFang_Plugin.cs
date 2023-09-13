@@ -95,7 +95,7 @@ namespace NewFang_Plugin
 
         public static bool downloadLatestVersionPlugin(string path, string fileName)
         {
-            string url = "https://raw.githubusercontent.com/AALUND13/AALUND13_Plugin/master/Build/AALUND13_Plugin.zip";
+            string url = "https://raw.githubusercontent.com/AALUND13/NewFang-Plugin/master/Build/NewFang%20Plugin.zip";
             string savePath = Path.Combine(path, fileName);
 
             try
@@ -142,7 +142,7 @@ namespace NewFang_Plugin
                 string trimmedPath = originalPath.TrimEnd("Instance".ToCharArray());
                 string path = Path.Combine(trimmedPath, "Plugins");
 
-                string manifestUrl = "https://github.com/AALUND13/NewFang-Plugin/raw/master/Build/NewFang%20Plugin.zip";
+                string manifestUrl = "https://raw.githubusercontent.com/AALUND13/NewFang-Plugin/master/NewFang%20Plugin/manifest.xml";
                 string versionFromGithub = GetVersionFromManifest(manifestUrl);
 
                 if (versionFromGithub != string.Empty)
