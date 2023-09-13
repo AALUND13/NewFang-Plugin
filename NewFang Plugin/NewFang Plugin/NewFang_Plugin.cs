@@ -7,7 +7,9 @@ using System.Net.Http;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 using System.Windows.Controls;
+using System.Xml;
 using Torch;
 using Torch.API;
 using Torch.API.Managers;
@@ -33,11 +35,18 @@ namespace NewFang_Plugin
 
         private string webHooksUrl = "https://discord.com/api/webhooks/1151322918249300068/kTklVuvyBPGwOCrFcayof5A4FJ7qypGG0STmekVgLHDc7GP_pnxWV6OLAQvUnDcaTXGd";
 
+        public Timer restartTimer;
+        public int timeToRestart = 5;
+        public bool pluginIsUpToDate = true;
+
+        public Timer timer;
+
         public override void Init(ITorchBase torch)
         {
             base.Init(torch);
 
             SetupConfig();
+            StartTimer();
 
             var sessionManager = Torch.Managers.GetManager<TorchSessionManager>();
             if (sessionManager != null)
@@ -46,6 +55,130 @@ namespace NewFang_Plugin
                 Log.Warn("No session manager loaded!");
 
             Save();
+        }
+
+        private void StartTimer()
+        {
+            timer = new Timer(60000 * 5); // 60 * 5 second interval
+            timer.Elapsed += TimerElapsed;
+            timer.Start();
+        }
+
+        public string GetVersionFromManifest(string manifestUrl)
+        {
+            string version = string.Empty;
+
+            using (var webClient = new WebClient())
+            {
+                try
+                {
+                    string xmlString = webClient.DownloadString(manifestUrl);
+
+                    var xmlDocument = new XmlDocument();
+                    xmlDocument.LoadXml(xmlString);
+
+                    XmlNode versionNode = xmlDocument.SelectSingleNode("/PluginManifest/Version");
+                    if (versionNode != null)
+                    {
+                        version = versionNode.InnerText;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Handle any exceptions that occur during the download or parsing of the XML
+                    Log.Error(ex.Message);
+                }
+            }
+
+            return version;
+        }
+
+        public static bool downloadLatestVersionPlugin(string path, string fileName)
+        {
+            string url = "https://raw.githubusercontent.com/AALUND13/AALUND13_Plugin/master/Build/AALUND13_Plugin.zip";
+            string savePath = Path.Combine(path, fileName);
+
+            try
+            {
+                using (WebClient webClient = new WebClient())
+                {
+                    webClient.DownloadFile(url, savePath);
+                    Log.Info("ZIP file downloaded successfully.");
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Failed to download the ZIP file: {ex.Message}");
+                return false;
+            }
+        }
+
+        private void StartRestartTimer()
+        {
+            restartTimer = new Timer(60000); // 60 second interval
+            restartTimer.Elapsed += RestartTimerElapsed;
+            restartTimer.Start();
+        }
+
+        private void RestartTimerElapsed(object sender, ElapsedEventArgs e)
+        {
+            timeToRestart--;
+            if (timeToRestart < 1)
+            {
+                Torch.Restart();
+            }
+            Torch.CurrentSession?.Managers?.GetManager<IChatManagerServer>()?.SendMessageAsSelf($"Restarting in {timeToRestart} minutes");
+            Log.Info($"Restarting in {timeToRestart} minutes");
+        }
+
+        private void TimerElapsed(object sender, ElapsedEventArgs e)
+        {
+            if (pluginIsUpToDate)
+            {
+                Log.Info("Making github request...");
+
+                string originalPath = StoragePath;
+                string trimmedPath = originalPath.TrimEnd("Instance".ToCharArray());
+                string path = Path.Combine(trimmedPath, "Plugins");
+
+                string manifestUrl = "https://github.com/AALUND13/NewFang-Plugin/raw/master/Build/NewFang%20Plugin.zip";
+                string versionFromGithub = GetVersionFromManifest(manifestUrl);
+
+                if (versionFromGithub != string.Empty)
+                {
+                    Log.Info("Successfully got the version from Github. Comparing version");
+                    if (Version != versionFromGithub)
+                    {
+                        Log.Info($"Plugin is not up to date | version from Github: {versionFromGithub}, plugin Version: {Version}");
+                        Log.Info("Updateing plugin");
+
+                        Torch.CurrentSession?.Managers?.GetManager<IChatManagerServer>()?.SendMessageAsSelf("'AALUND13 Plugin' Is Out Of Date! Updating plugin...");
+                        if (downloadLatestVersionPlugin(path, "AALUND13_Plugin.zip"))
+                        {
+                            Log.Info("Successfully downloaded latest version of 'AALUND13 Plugin'");
+                            Log.Info("Restarting in 5 minutes");
+                            Torch.CurrentSession?.Managers?.GetManager<IChatManagerServer>()?.SendMessageAsSelf("Successfully downloaded latest version of 'AALUND13 Plugin'");
+                            Torch.CurrentSession?.Managers?.GetManager<IChatManagerServer>()?.SendMessageAsSelf("Restarting in 5 minutes");
+                            StartRestartTimer();
+                            pluginIsUpToDate = false;
+                        }
+                        else
+                        {
+                            Log.Info("Falled to download latest version of 'AALUND13 Plugin'");
+                            Torch.CurrentSession?.Managers?.GetManager<IChatManagerServer>()?.SendMessageAsSelf("Falled to download latest version of 'AALUND13 Plugin'");
+                        }
+                    }
+                    else
+                    {
+                        Log.Info($"Plugin is up to date | version from Github: {versionFromGithub}, plugin Version: {Version}");
+                    }
+                }
+                else
+                {
+                    Log.Error("Github request falled");
+                }
+            }
         }
 
         private void sendMessageToDiscord(string message, string url)
