@@ -16,6 +16,7 @@ using Torch.API.Managers;
 using Torch.API.Plugins;
 using Torch.API.Session;
 using Torch.Session;
+using VRage;
 using VRage.Scripting;
 
 namespace NewFang_Plugin
@@ -33,13 +34,13 @@ namespace NewFang_Plugin
         private Persistent<NewFang_PluginConfig> _config;
         public NewFang_PluginConfig Config => _config?.Data;
 
-        private string webHooksUrl = "https://discord.com/api/webhooks/1151322918249300068/kTklVuvyBPGwOCrFcayof5A4FJ7qypGG0STmekVgLHDc7GP_pnxWV6OLAQvUnDcaTXGd";
-
         public Timer restartTimer;
         public int timeToRestart = 5;
         public bool pluginIsUpToDate = true;
 
         public bool isRestarting = false;
+
+        public bool isRuning = false;
 
         public Timer timer;
 
@@ -153,23 +154,36 @@ namespace NewFang_Plugin
                     Log.Info("Successfully got the version from Github. Comparing version");
                     if (Version != versionFromGithub)
                     {
-                        Log.Info($"Plugin is not up to date | version from Github: {versionFromGithub}, plugin Version: {Version}");
-                        Log.Info("Updateing plugin");
+                        Log.Info($"Plugin is not up to date | GitHub Version: {versionFromGithub}, Plugin Version: {Version}");
+                        Log.Info("Updating plugin...");
 
-                        Torch.CurrentSession?.Managers?.GetManager<IChatManagerServer>()?.SendMessageAsSelf("'NewFang Plugin' Is Out Of Date! Updating plugin...");
-                        if (downloadLatestVersionPlugin(path, "NewFang_Plugin.zip"))
+                        if (isRuning)
                         {
-                            Log.Info("Successfully downloaded latest version of 'NewFang Plugin'");
-                            Log.Info("Restarting in 5 minutes");
-                            Torch.CurrentSession?.Managers?.GetManager<IChatManagerServer>()?.SendMessageAsSelf("Successfully downloaded latest version of 'NewFang Plugin'");
-                            Torch.CurrentSession?.Managers?.GetManager<IChatManagerServer>()?.SendMessageAsSelf("Restarting in 5 minutes");
-                            StartRestartTimer();
-                            pluginIsUpToDate = false;
+                            Log.Info("Notifying server about the outdated plugin...");
+                            Torch.CurrentSession?.Managers?.GetManager<IChatManagerServer>()?.SendMessageAsSelf("'NewFang Plugin' is Out of Date! Updating plugin...");
+
+                            if (downloadLatestVersionPlugin(path, "NewFang_Plugin.zip"))
+                            {
+                                Log.Info("Successfully downloaded the latest version of 'NewFang Plugin'");
+                                Log.Info("Restarting server in 5 minutes...");
+
+                                Torch.CurrentSession?.Managers?.GetManager<IChatManagerServer>()?.SendMessageAsSelf("Successfully downloaded the latest version of 'NewFang Plugin'");
+                                Torch.CurrentSession?.Managers?.GetManager<IChatManagerServer>()?.SendMessageAsSelf("Restarting server in 5 minutes...");
+
+                                // Start the restart timer
+                                StartRestartTimer();
+                                pluginIsUpToDate = false;
+                            }
+                            else
+                            {
+                                Log.Error("Failed to download the latest version of 'NewFang Plugin'");
+                                Torch.CurrentSession?.Managers?.GetManager<IChatManagerServer>()?.SendMessageAsSelf("Failed to download the latest version of 'NewFang Plugin'");
+                            }
                         }
                         else
                         {
-                            Log.Info("Falled to download latest version of 'NewFang Plugin'");
-                            Torch.CurrentSession?.Managers?.GetManager<IChatManagerServer>()?.SendMessageAsSelf("Falled to download latest version of 'NewFang Plugin'");
+                            Log.Info("Server is not running, skipping timer, and restarting to update");
+                            Torch.Restart();
                         }
                     }
                     else
@@ -243,15 +257,22 @@ namespace NewFang_Plugin
 
                 case TorchSessionState.Loaded:
                     Log.Info("Session Loaded!");
-                    sendMessageToDiscord("Server Online", webHooksUrl);
+                    sendMessageToDiscord("Server Online", Config.WebHooksUrl);
+                    isRuning = true;
                     break;
 
                 case TorchSessionState.Unloading:
-                    Log.Info("Session Unloading!");
-                    sendMessageToDiscord("Server Offline", webHooksUrl);
+                    isRuning = false;
+                    break;
+
+                case TorchSessionState.Unloaded:
+                    Log.Info("Session Unloaded!");
+                    sendMessageToDiscord("Server Offline", Config.WebHooksUrl);
                     break;
             }
         }
+
+       
 
         private void SetupConfig()
         {
