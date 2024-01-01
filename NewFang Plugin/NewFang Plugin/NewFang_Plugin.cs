@@ -1,7 +1,10 @@
 ﻿using NLog;
+using Sandbox.ModAPI;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Security.Policy;
@@ -43,6 +46,7 @@ namespace NewFang_Plugin
         public bool isRuning = false;
 
         public Timer timer;
+        public Timer timerTenSec;
 
         public override void Init(ITorchBase torch)
         {
@@ -68,6 +72,10 @@ namespace NewFang_Plugin
             timer = new Timer(60000 * 5); // 60 * 5 second interval
             timer.Elapsed += TimerElapsed;
             timer.Start();
+
+            timerTenSec = new Timer(10000); //10 second interval
+            timerTenSec.Elapsed += TimerTenSecElapsed;
+            timerTenSec.Start();
         }
 
         public string GetVersionFromManifest(string manifestUrl)
@@ -137,6 +145,23 @@ namespace NewFang_Plugin
             }
             Torch.CurrentSession?.Managers?.GetManager<IChatManagerServer>()?.SendMessageAsSelf($"Restarting in {timeToRestart} minutes");
             Log.Info($"Restarting in {timeToRestart} minutes");
+        }
+
+        private void TimerTenSecElapsed(object sender, ElapsedEventArgs e)
+        {
+            if (isRestarting)
+            {
+                var modList = MyAPIGateway.Session.Mods.ToList();
+                List<string> modNames = new List<string>();
+
+                foreach (var mod in modList)
+                {
+                    string formattedName = mod.FriendlyName.Replace("\"", "");
+                    modNames.Add(formattedName);
+                }
+
+                API_Interface.updateServerStatus((isRuning ? "Online" : "Offline"), Torch.CurrentSession.KeenSession.Players.GetOnlinePlayerCount(), Torch.CurrentSession.KeenSession.MaxPlayers, Torch.CurrentSession.KeenSession.SessionSimSpeedServer, modNames);
+            }
         }
 
         private void TimerElapsed(object sender, ElapsedEventArgs e)

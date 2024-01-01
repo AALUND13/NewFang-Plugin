@@ -4,10 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
-using VRage.Utils;
 
 namespace NewFang_Plugin
 {
@@ -50,10 +46,29 @@ namespace NewFang_Plugin
             makeAPIRequest("send-embed-message", $"guildId={guildId}&channelId={channelId}&title={encodedTitle}&color={hexColor}");
         }
 
-        public static void updateServerStatus(string status, int players, int maxPlayers, int simulationSpeed)
+        public static void updateServerStatus(string status, int players, int maxPlayers, float simulationSpeed, List<string> mods)
         {
-            string encodedStatus = Uri.EscapeDataString(status);
-            makeAPIRequest("update_server_status", $"status={encodedStatus}&players={players}&maxPlayers={maxPlayers}&simulationSpeed={simulationSpeed}");
+            using (WebClient client = new WebClient())
+            {
+                client.Headers[HttpRequestHeader.ContentType] = "application/json";
+                client.QueryString.Add("apiKey", API_Key);
+
+                try
+                {
+                    string url = $"{API_URL}/update_server_status";
+
+                    // Serialize the mods array to JSON with proper escaping
+                    string jsonPayload = $"{{\"status\":{status},\"players\":{players},\"maxPlayers\":{maxPlayers},\"simulationSpeed\":{simulationSpeed},\"mods\":{mods}}}";
+
+                    string response = client.UploadString(url, jsonPayload);
+
+                    Console.WriteLine("API Response: " + response);
+                }
+                catch (WebException ex)
+                {
+                    Console.WriteLine("Error: " + ex.Message);
+                }
+            }
         }
 
     }
