@@ -58,6 +58,9 @@ namespace NewFang_Plugin
                 Log.Warn("No session manager loaded!");
 
             Save();
+
+            API_Interface.API_URL = Config.API_URL;
+            API_Interface.API_Key = Config.API_Key;
         }
 
         private void StartTimer()
@@ -223,7 +226,7 @@ namespace NewFang_Plugin
                     requestStream.Write(payloadBytes, 0, payloadBytes.Length);
                     requestStream.Close();
                 }
-
+                
                 var response = (HttpWebResponse)request.GetResponse();
 
                 if (response.StatusCode == HttpStatusCode.NoContent)
@@ -257,7 +260,7 @@ namespace NewFang_Plugin
 
                 case TorchSessionState.Loaded:
                     Log.Info("Session Loaded!");
-                    sendMessageToDiscord("Server Online", Config.WebHooksUrl);
+                    API_Interface.sendDiscordMessage(721236290938601542, 808759803626258442, "Server Status: Online", "0x00ff00");
                     isRuning = true;
                     break;
 
@@ -267,12 +270,10 @@ namespace NewFang_Plugin
 
                 case TorchSessionState.Unloaded:
                     Log.Info("Session Unloaded!");
-                    sendMessageToDiscord("Server Offline", Config.WebHooksUrl);
+                    API_Interface.sendDiscordMessage(721236290938601542, 808759803626258442, "Server Status: Offline", "0xff0000");
                     break;
             }
         }
-
-       
 
         private void SetupConfig()
         {

@@ -148,6 +148,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="NewFang Plugin\API_Interface.cs" />
     <Compile Include="NewFang Plugin\NewFang_PluginControl.xaml.cs">
       <DependentUpon>NewFang_PluginControl.xaml</DependentUpon>
     </Compile>

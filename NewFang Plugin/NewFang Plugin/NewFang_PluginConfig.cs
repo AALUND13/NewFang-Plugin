@@ -15,8 +15,10 @@ namespace NewFang_Plugin
         //public int IntProperty { get => _IntProperty; set => SetValue(ref _IntProperty, value); }
         //public bool BoolProperty { get => _BoolProperty; set => SetValue(ref _BoolProperty, value); }
 
-        private string _WebHooksUrl = "https://discord.com/api/webhooks/1151322918249300068/kTklVuvyBPGwOCrFcayof5A4FJ7qypGG0STmekVgLHDc7GP_pnxWV6OLAQvUnDcaTXGd";
+        private string _API_URL = "Unknow";
+        private string _API_Key = "Unknow";
 
-        public string WebHooksUrl { get => _WebHooksUrl; set => SetValue(ref _WebHooksUrl, value); }
+        public string API_URL { get => _API_URL; set => SetValue(ref _API_URL, value); }
+        public string API_Key { get => _API_Key; set => SetValue(ref _API_Key, value); }
     }
 }
